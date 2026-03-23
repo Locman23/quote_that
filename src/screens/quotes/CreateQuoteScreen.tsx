@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function CreateGroupScreen() {
+export default function CreateQuoteScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Group</Text>
-      <Text>Form goes here</Text>
+      <Text style={styles.title}>Create Quote</Text>
+      <Text>Quote form goes here</Text>
     </View>
   );
 }
