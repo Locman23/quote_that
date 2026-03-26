@@ -96,7 +96,8 @@ on groups
 for select
 to authenticated
 using (
-  exists (
+  created_by = (select auth.uid())
+  or exists (
     select 1 from group_members
     where group_members.group_id = groups.id
     and group_members.user_id = (select auth.uid())
