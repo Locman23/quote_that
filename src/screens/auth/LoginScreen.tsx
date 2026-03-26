@@ -65,8 +65,6 @@ export default function LoginScreen({ navigation }: Props) {
       if (error) {
         throw error;
       }
-
-      navigation.navigate('Groups');
     } catch (error) {
       Alert.alert('Login Error', getLoginErrorMessage(error));
     }
