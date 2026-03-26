@@ -11,8 +11,19 @@ export type AppStackParamList = {
   Groups: undefined;
   CreateGroup: undefined;
   JoinGroup: undefined;
-  GroupDetail: { groupId: string; groupName: string };
-  CreateQuote: { groupId: string };
+  GroupDetail: {
+    groupId: string;
+    groupName: string;
+    refreshNonce?: number;
+    newQuote?: {
+      id: string;
+      quoted_person_name: string;
+      content: string;
+      context: string | null;
+      created_at: string;
+    };
+  };
+  CreateQuote: { groupId: string; groupName?: string };
 };
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();

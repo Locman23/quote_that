@@ -34,10 +34,11 @@ function formatCreatedAt(value: string) {
 }
 
 export default function GroupDetailScreen({ route, navigation }: Props) {
-  const { groupId, groupName } = route.params;
+  const { groupId, groupName, newQuote, refreshNonce } = route.params;
   const groupAccess = useGroupMembershipGuard(groupId, groupName);
   const [quotes, setQuotes] = useState<QuoteListItem[]>([]);
   const [isLoadingQuotes, setIsLoadingQuotes] = useState(true);
+  const [isRefreshingQuotes, setIsRefreshingQuotes] = useState(false);
   const [quotesErrorMessage, setQuotesErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,6 +46,17 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
       title: groupAccess.groupName ?? groupName,
     });
   }, [groupAccess.groupName, groupName, navigation]);
+
+  useEffect(() => {
+    if (!newQuote) {
+      return;
+    }
+
+    setQuotes((currentQuotes) => {
+      const withoutDuplicate = currentQuotes.filter((quote) => quote.id !== newQuote.id);
+      return [newQuote, ...withoutDuplicate];
+    });
+  }, [newQuote]);
 
   useFocusEffect(
     useCallback(() => {
@@ -56,11 +68,19 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
             setQuotes([]);
             setQuotesErrorMessage(null);
             setIsLoadingQuotes(false);
+            setIsRefreshingQuotes(false);
           }
           return;
         }
 
-        setIsLoadingQuotes(true);
+        const shouldShowFullScreenLoader = quotes.length === 0;
+
+        if (shouldShowFullScreenLoader) {
+          setIsLoadingQuotes(true);
+        } else {
+          setIsRefreshingQuotes(true);
+        }
+
         setQuotesErrorMessage(null);
 
         const { data, error } = await supabase
@@ -77,11 +97,13 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
           setQuotes([]);
           setQuotesErrorMessage('Unable to load quotes right now. Please try again.');
           setIsLoadingQuotes(false);
+          setIsRefreshingQuotes(false);
           return;
         }
 
         setQuotes(data ?? []);
         setIsLoadingQuotes(false);
+        setIsRefreshingQuotes(false);
       }
 
       void loadQuotes();
@@ -89,7 +111,7 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
       return () => {
         isActive = false;
       };
-    }, [groupAccess.hasAccess, groupId])
+    }, [groupAccess.hasAccess, groupId, refreshNonce])
   );
 
   if (groupAccess.isLoading) {
@@ -113,8 +135,23 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Button title="Add Quote" onPress={() => navigation.navigate('CreateQuote', { groupId })} />
+        <Button
+          title={isRefreshingQuotes ? 'Refreshing...' : 'Refresh'}
+          onPress={() => navigation.setParams({ refreshNonce: Date.now() })}
+          disabled={isRefreshingQuotes}
+        />
+        <Button
+          title="Add Quote"
+          onPress={() => navigation.navigate('CreateQuote', { groupId, groupName: groupAccess.groupName ?? groupName })}
+        />
       </View>
+
+      {isRefreshingQuotes ? (
+        <View style={styles.inlineRefreshState}>
+          <ActivityIndicator size="small" />
+          <Text style={styles.inlineRefreshText}>Refreshing quotes...</Text>
+        </View>
+      ) : null}
 
       {isLoadingQuotes ? (
         <View style={styles.centerState}>
@@ -152,6 +189,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20, gap: 16 },
   header: { gap: 12 },
   centerState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 24 },
+  inlineRefreshState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  inlineRefreshText: {
+    fontSize: 14,
+    color: '#555555',
+  },
   stateText: { fontSize: 16, color: '#444444', textAlign: 'center' },
   errorText: { fontSize: 16, color: '#B00020', textAlign: 'center' },
   listContent: { gap: 12, paddingBottom: 12 },
