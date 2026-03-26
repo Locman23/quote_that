@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   Button,
@@ -27,65 +28,67 @@ export default function GroupsScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isActive = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    async function loadGroups() {
-      if (!user) {
-        if (isActive) {
-          setGroups([]);
-          setErrorMessage('You need to be signed in to view groups.');
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      const { data, error } = await supabase
-        .from('group_members')
-        .select('group:groups(id, name, join_code)')
-        .eq('user_id', user.id)
-        .order('joined_at', { ascending: false });
-
-      if (!isActive) {
-        return;
-      }
-
-      if (error) {
-        setGroups([]);
-        setErrorMessage(error.message);
-        setIsLoading(false);
-        return;
-      }
-
-      const nextGroups = (data ?? [])
-        .map((item) => {
-          const group = Array.isArray(item.group) ? item.group[0] : item.group;
-
-          if (!group) {
-            return null;
+      async function loadGroups() {
+        if (!user) {
+          if (isActive) {
+            setGroups([]);
+            setErrorMessage('You need to be signed in to view groups.');
+            setIsLoading(false);
           }
+          return;
+        }
 
-          return {
-            id: group.id,
-            name: group.name,
-            join_code: group.join_code,
-          } satisfies GroupListItem;
-        })
-        .filter((group): group is GroupListItem => group !== null);
+        setIsLoading(true);
+        setErrorMessage(null);
 
-      setGroups(nextGroups);
-      setIsLoading(false);
-    }
+        const { data, error } = await supabase
+          .from('group_members')
+          .select('group:groups(id, name, join_code)')
+          .eq('user_id', user.id)
+          .order('joined_at', { ascending: false });
 
-    void loadGroups();
+        if (!isActive) {
+          return;
+        }
 
-    return () => {
-      isActive = false;
-    };
-  }, [user]);
+        if (error) {
+          setGroups([]);
+          setErrorMessage('Unable to load your groups right now. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+
+        const nextGroups = (data ?? [])
+          .map((item) => {
+            const group = Array.isArray(item.group) ? item.group[0] : item.group;
+
+            if (!group) {
+              return null;
+            }
+
+            return {
+              id: group.id,
+              name: group.name,
+              join_code: group.join_code,
+            } satisfies GroupListItem;
+          })
+          .filter((group): group is GroupListItem => group !== null);
+
+        setGroups(nextGroups);
+        setIsLoading(false);
+      }
+
+      void loadGroups();
+
+      return () => {
+        isActive = false;
+      };
+    }, [user])
+  );
 
   return (
     <View style={styles.container}>
