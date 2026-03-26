@@ -1,18 +1,11 @@
-import { ActivityIndicator, Button, Alert, View } from 'react-native';
+import { Alert, Button } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from '../screens/auth/LoginScreen';
-import SignupScreen from '../screens/auth/SignupScreen';
 import GroupsScreen from '../screens/groups/GroupsScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import JoinGroupScreen from '../screens/groups/JoinGroupScreen';
 import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
 import CreateQuoteScreen from '../screens/quotes/CreateQuoteScreen';
 import { useAuthStore } from '../store/authStore';
-
-export type AuthStackParamList = {
-  Login: undefined;
-  Signup: undefined;
-};
 
 export type AppStackParamList = {
   Groups: undefined;
@@ -22,10 +15,6 @@ export type AppStackParamList = {
   CreateQuote: { groupId: string };
 };
 
-// Kept for backward compatibility — screens import this and reference their own route key
-export type RootStackParamList = AuthStackParamList & AppStackParamList;
-
-const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
 function LogoutButton() {
@@ -40,15 +29,6 @@ function LogoutButton() {
   };
 
   return <Button title="Log Out" onPress={() => void handlePress()} />;
-}
-
-function AuthNavigator() {
-  return (
-    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-      <AuthStack.Screen name="Login" component={LoginScreen} />
-      <AuthStack.Screen name="Signup" component={SignupScreen} />
-    </AuthStack.Navigator>
-  );
 }
 
 function AppNavigator() {
@@ -67,16 +47,4 @@ function AppNavigator() {
   );
 }
 
-export default function RootNavigator() {
-  const { session, isLoading } = useAuthStore();
-
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return session ? <AppNavigator /> : <AuthNavigator />;
-}
+export default AppNavigator;

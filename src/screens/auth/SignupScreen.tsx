@@ -10,8 +10,9 @@ import {
   View,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/AppNavigator';
+import { RootStackParamList } from '../../types/navigation';
 import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/authStore';
 
 const signupSchema = z
   .object({
@@ -42,6 +43,10 @@ function getSignupErrorMessage(error: unknown): string {
 
   const message = error.message.toLowerCase();
 
+  if (message.includes('username already taken') || message.includes('profiles_username_key')) {
+    return 'That username is already taken.';
+  }
+
   if (message.includes('already registered') || message.includes('already exists')) {
     return 'An account with this email already exists.';
   }
@@ -54,6 +59,8 @@ function getSignupErrorMessage(error: unknown): string {
 }
 
 export default function SignupScreen({ navigation }: Props) {
+  const authError = useAuthStore((state) => state.authError);
+  const clearAuthError = useAuthStore((state) => state.clearAuthError);
   const {
     control,
     handleSubmit,
@@ -70,8 +77,23 @@ export default function SignupScreen({ navigation }: Props) {
 
   const onSubmit = async (values: SignupFormData) => {
     try {
+      clearAuthError();
+
       const username = values.username.trim();
       const email = values.email.trim().toLowerCase();
+
+      const { data: isUsernameAvailable, error: usernameLookupError } = await supabase.rpc(
+        'is_username_available',
+        { candidate_username: username }
+      );
+
+      if (usernameLookupError) {
+        throw usernameLookupError;
+      }
+
+      if (!isUsernameAvailable) {
+        throw new Error('Username already taken.');
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -93,6 +115,29 @@ export default function SignupScreen({ navigation }: Props) {
         throw new Error('Account was created, but user details were not returned.');
       }
 
+      if (data.session) {
+        const { error: profileError } = await supabase.from('profiles').upsert(
+          {
+            id: userId,
+            username,
+            email,
+          },
+          { onConflict: 'id' }
+        );
+
+        if (profileError) {
+          await supabase.auth.signOut();
+
+          const profileMessage = profileError.message.toLowerCase();
+
+          if (profileMessage.includes('username') || profileMessage.includes('profiles_username_key')) {
+            throw new Error('Username already taken.');
+          }
+
+          throw new Error('Account was created, but profile setup failed. Please try again.');
+        }
+      }
+
       const successMessage = data.session
         ? 'Your account has been created. You can now log in.'
         : 'Your account has been created. Check your email to confirm your account, then log in. Your profile will be completed after you sign in.';
@@ -111,6 +156,8 @@ export default function SignupScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
+
+      {authError ? <Text style={styles.authErrorBanner}>{authError}</Text> : null}
 
       <Controller
         control={control}
@@ -212,5 +259,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: -6,
     marginBottom: 2,
+  },
+  authErrorBanner: {
+    color: '#B00020',
+    backgroundColor: '#FDECEC',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
 });
