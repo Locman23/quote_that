@@ -76,6 +76,11 @@ export default function SignupScreen({ navigation }: Props) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password: values.password,
+        options: {
+          data: {
+            username,
+          },
+        },
       });
 
       if (error) {
@@ -88,22 +93,15 @@ export default function SignupScreen({ navigation }: Props) {
         throw new Error('Account was created, but user details were not returned.');
       }
 
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: userId,
-        username,
-        email,
-      });
-
-      if (profileError) {
-        throw profileError;
-      }
-
       const successMessage = data.session
         ? 'Your account has been created. You can now log in.'
-        : 'Your account has been created. Check your email to confirm your account, then log in.';
+        : 'Your account has been created. Check your email to confirm your account, then log in. Your profile will be completed after you sign in.';
 
       Alert.alert('Success', successMessage);
-      navigation.goBack();
+
+      if (!data.session) {
+        navigation.navigate('Login');
+      }
     } catch (error) {
       const message = getSignupErrorMessage(error);
       Alert.alert('Signup Error', message);
