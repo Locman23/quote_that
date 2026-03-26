@@ -113,13 +113,8 @@ with check ((select auth.uid()) = created_by);
 create policy "Users can read memberships for their groups"
 on group_members
 for select
-using (
-  exists (
-    select 1 from group_members gm
-    where gm.group_id = group_members.group_id
-    and gm.user_id = auth.uid()
-  )
-);
+to authenticated
+using ((select auth.uid()) = user_id);
 
 create policy "Users can join groups as themselves"
 on group_members
