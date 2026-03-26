@@ -63,7 +63,7 @@ function getCreateQuoteErrorMessage(error: unknown) {
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateQuote'>;
 
 export default function CreateQuoteScreen({ route, navigation }: Props) {
-  const { groupId } = route.params;
+  const { groupId, groupName } = route.params;
   const groupAccess = useGroupMembershipGuard(groupId);
   const user = useAuthStore((state) => state.user);
   const {
@@ -90,20 +90,29 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
         throw new Error('You no longer have access to this group.');
       }
 
-      const { error } = await supabase.from('quotes').insert({
-        group_id: groupId,
-        created_by: user.id,
-        quoted_person_name: values.quotedPersonName.trim(),
-        content: values.content.trim(),
-        context: values.context?.trim() || null,
-      });
+      const { data, error } = await supabase
+        .from('quotes')
+        .insert({
+          group_id: groupId,
+          created_by: user.id,
+          quoted_person_name: values.quotedPersonName.trim(),
+          content: values.content.trim(),
+          context: values.context?.trim() || null,
+        })
+        .select('id, quoted_person_name, content, context, created_at')
+        .single();
 
       if (error) {
         throw error;
       }
 
       reset();
-      navigation.goBack();
+      navigation.navigate('GroupDetail', {
+        groupId,
+        groupName: groupAccess.groupName ?? groupName ?? 'Group',
+        refreshNonce: Date.now(),
+        newQuote: data,
+      });
     } catch (error) {
       Alert.alert('Create Quote Error', getCreateQuoteErrorMessage(error));
     }
