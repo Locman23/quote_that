@@ -51,6 +51,22 @@ async function resolveValidSession(session: Session | null) {
   return session;
 }
 
+async function resolveAuthenticatedUser(session: Session | null) {
+  const validSession = await resolveValidSession(session);
+
+  if (!validSession?.user) {
+    return null;
+  }
+
+  try {
+    await ensureProfile(validSession.user);
+    return validSession;
+  } catch {
+    await supabase.auth.signOut();
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   user: null,
@@ -65,22 +81,26 @@ export const useAuthStore = create<AuthState>((set) => ({
           set({ session: null, user: null, isLoading: false });
           return;
         }
-        const validSession = await resolveValidSession(session);
+        const authenticatedSession = await resolveAuthenticatedUser(session);
 
-        if (validSession?.user) {
-          void ensureProfile(validSession.user).catch(() => {});
-        }
-        set({ session: validSession, user: validSession?.user ?? null, isLoading: false });
+        set({
+          session: authenticatedSession,
+          user: authenticatedSession?.user ?? null,
+          isLoading: false,
+        });
       })
       .catch(() => {
         set({ session: null, user: null, isLoading: false });
       });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        void ensureProfile(session.user).catch(() => {});
-      }
-      set({ session, user: session?.user ?? null, isLoading: false });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const authenticatedSession = await resolveAuthenticatedUser(session);
+
+      set({
+        session: authenticatedSession,
+        user: authenticatedSession?.user ?? null,
+        isLoading: false,
+      });
     });
 
     authSubscription = subscription;

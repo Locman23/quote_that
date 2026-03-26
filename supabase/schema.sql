@@ -59,6 +59,21 @@ on profiles
 for update
 using (auth.uid() = id);
 
+create or replace function public.is_username_available(candidate_username text)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select not exists (
+    select 1
+    from public.profiles
+    where username = candidate_username
+  );
+$$;
+
+grant execute on function public.is_username_available(text) to anon, authenticated;
+
 /*Group access policies */
 create policy "Members can read groups they belong to"
 on groups
