@@ -1,6 +1,12 @@
 /* Team and quote management schema for Quote That! */
 create extension if not exists pgcrypto;
 
+drop table if exists quotes cascade;
+drop table if exists group_members cascade;
+drop table if exists groups cascade;
+drop table if exists profiles cascade;
+drop function if exists public.is_username_available(text);
+
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
@@ -107,8 +113,13 @@ with check ((select auth.uid()) = created_by);
 create policy "Users can read memberships for their groups"
 on group_members
 for select
-to authenticated
-using ((select auth.uid()) = user_id);
+using (
+  exists (
+    select 1 from group_members gm
+    where gm.group_id = group_members.group_id
+    and gm.user_id = auth.uid()
+  )
+);
 
 create policy "Users can join groups as themselves"
 on group_members
