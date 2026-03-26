@@ -12,6 +12,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { supabase } from '../../lib/supabase';
+import { useAuthStore } from '../../store/authStore';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -43,6 +44,8 @@ function getLoginErrorMessage(error: unknown): string {
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
+  const authError = useAuthStore((state) => state.authError);
+  const clearAuthError = useAuthStore((state) => state.clearAuthError);
   const {
     control,
     handleSubmit,
@@ -57,6 +60,8 @@ export default function LoginScreen({ navigation }: Props) {
 
   const onSubmit = async (values: LoginFormData) => {
     try {
+      clearAuthError();
+
       const { error } = await supabase.auth.signInWithPassword({
         email: values.email.trim().toLowerCase(),
         password: values.password,
@@ -73,6 +78,8 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Quote That</Text>
+
+      {authError ? <Text style={styles.authErrorBanner}>{authError}</Text> : null}
 
       <Controller
         control={control}
@@ -143,5 +150,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: -6,
     marginBottom: 2,
+  },
+  authErrorBanner: {
+    color: '#B00020',
+    backgroundColor: '#FDECEC',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
 });

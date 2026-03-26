@@ -6,6 +6,8 @@ drop table if exists group_members cascade;
 drop table if exists groups cascade;
 drop table if exists profiles cascade;
 drop function if exists public.is_username_available(text);
+drop function if exists public.find_group_by_join_code(text);
+drop function if exists public.create_group_with_admin_membership(text);
 
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -89,6 +91,70 @@ as $$
 $$;
 
 grant execute on function public.is_username_available(text) to anon, authenticated;
+
+create or replace function public.find_group_by_join_code(candidate_join_code text)
+returns table (id uuid, name text)
+language sql
+security definer
+set search_path = public
+as $$
+  select groups.id, groups.name
+  from public.groups
+  where groups.join_code = upper(candidate_join_code)
+  limit 1;
+$$;
+
+grant execute on function public.find_group_by_join_code(text) to authenticated;
+
+create or replace function public.create_group_with_admin_membership(group_name text)
+returns table (id uuid, name text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := auth.uid();
+  generated_join_code text;
+begin
+  if current_user_id is null then
+    raise exception 'You must be signed in to create a group.';
+  end if;
+
+  if group_name is null or btrim(group_name) = '' then
+    raise exception 'Group name is required.';
+  end if;
+
+  loop
+    generated_join_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
+
+    begin
+      insert into public.groups (name, join_code, created_by)
+      values (btrim(group_name), generated_join_code, current_user_id)
+      returning groups.id, groups.name into id, name;
+
+      exit;
+    exception
+      when unique_violation then
+        if exists (
+          select 1
+          from public.groups
+          where groups.join_code = generated_join_code
+        ) then
+          continue;
+        end if;
+
+        raise;
+    end;
+  end loop;
+
+  insert into public.group_members (group_id, user_id, role)
+  values (id, current_user_id, 'admin');
+
+  return next;
+end;
+$$;
+
+grant execute on function public.create_group_with_admin_membership(text) to authenticated;
 
 /*Group access policies */
 create policy "Members can read groups they belong to"

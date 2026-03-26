@@ -25,12 +25,6 @@ const createGroupSchema = z.object({
 type CreateGroupFormData = z.infer<typeof createGroupSchema>;
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>;
 
-function generateJoinCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-  return Array.from({ length: 8 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
-}
-
 function getCreateGroupErrorMessage(error: unknown) {
   const fallbackMessage = 'Unable to create the group right now.';
 
@@ -77,42 +71,18 @@ export default function CreateGroupScreen({ navigation }: Props) {
       }
 
       const groupName = values.name.trim();
-      let createdGroup: { id: string; name: string } | null = null;
-
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        const joinCode = generateJoinCode();
-        const { data, error } = await supabase
-          .from('groups')
-          .insert({
-            name: groupName,
-            join_code: joinCode,
-            created_by: user.id,
-          })
-          .select('id, name')
-          .single();
-
-        if (!error && data) {
-          createdGroup = data;
-          break;
-        }
-
-        if (error && !error.message.toLowerCase().includes('join_code')) {
-          throw error;
-        }
-      }
-
-      if (!createdGroup) {
-        throw new Error('Unable to generate a unique join code. Please try again.');
-      }
-
-      const { error: membershipError } = await supabase.from('group_members').insert({
-        group_id: createdGroup.id,
-        user_id: user.id,
-        role: 'admin',
+      const { data, error } = await supabase.rpc('create_group_with_admin_membership', {
+        group_name: groupName,
       });
 
-      if (membershipError) {
-        throw membershipError;
+      if (error) {
+        throw error;
+      }
+
+      const createdGroup = data?.[0];
+
+      if (!createdGroup) {
+        throw new Error('Unable to create the group right now.');
       }
 
       navigation.replace('GroupDetail', {
