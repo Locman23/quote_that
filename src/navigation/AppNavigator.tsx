@@ -5,7 +5,9 @@ import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import JoinGroupScreen from '../screens/groups/JoinGroupScreen';
 import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
 import CreateQuoteScreen from '../screens/quotes/CreateQuoteScreen';
+import EditQuoteScreen from '../screens/quotes/EditQuoteScreen';
 import { useAuthStore } from '../store/authStore';
+import type { QuoteRecord } from '../types';
 
 export type AppStackParamList = {
   Groups: undefined;
@@ -15,15 +17,10 @@ export type AppStackParamList = {
     groupId: string;
     groupName: string;
     refreshNonce?: number;
-    newQuote?: {
-      id: string;
-      quoted_person_name: string;
-      content: string;
-      context: string | null;
-      created_at: string;
-    };
+    newQuote?: QuoteRecord;
   };
   CreateQuote: { groupId: string; groupName?: string };
+  EditQuote: { groupId: string; groupName?: string; quote: QuoteRecord };
 };
 
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -54,6 +51,7 @@ function AppNavigator() {
       <AppStack.Screen name="JoinGroup" component={JoinGroupScreen} />
       <AppStack.Screen name="GroupDetail" component={GroupDetailScreen} />
       <AppStack.Screen name="CreateQuote" component={CreateQuoteScreen} />
+      <AppStack.Screen name="EditQuote" component={EditQuoteScreen} options={{ title: 'Edit Quote' }} />
     </AppStack.Navigator>
   );
 }

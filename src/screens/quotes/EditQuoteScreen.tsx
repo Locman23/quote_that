@@ -4,67 +4,69 @@ import {
   ActivityIndicator,
   Alert,
   Button,
-  View,
-  Text,
   StyleSheet,
+  Text,
   TextInput,
+  View,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { updateOwnQuote } from '../../lib/quotes';
+import { useAuthStore } from '../../store/authStore';
 import { RootStackParamList } from '../../types/navigation';
 import { useGroupMembershipGuard } from '../../utils/useGroupMembershipGuard';
-import { createQuote } from '../../lib/quotes';
-import { useAuthStore } from '../../store/authStore';
 import {
   getQuoteMutationErrorMessage,
   quoteFormSchema,
   type QuoteFormData,
 } from './quoteForm';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'CreateQuote'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'EditQuote'>;
 
-export default function CreateQuoteScreen({ route, navigation }: Props) {
-  const { groupId, groupName } = route.params;
-  const groupAccess = useGroupMembershipGuard(groupId);
+export default function EditQuoteScreen({ route, navigation }: Props) {
+  const { groupId, groupName, quote } = route.params;
   const user = useAuthStore((state) => state.user);
+  const groupAccess = useGroupMembershipGuard(groupId, groupName);
   const {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
-      content: '',
-      quotedPersonName: '',
-      context: '',
+      content: quote.content,
+      quotedPersonName: quote.quoted_person_name,
+      context: quote.context ?? '',
     },
   });
 
   const onSubmit = async (values: QuoteFormData) => {
     try {
       if (!user) {
-        throw new Error('You must be signed in to add a quote.');
+        throw new Error('You must be signed in to update a quote.');
+      }
+
+      if (quote.created_by !== user.id) {
+        throw new Error('You can only edit quotes you created.');
       }
 
       if (!groupAccess.hasAccess) {
         throw new Error('You no longer have access to this group.');
       }
 
-      const data = await createQuote({
+      await updateOwnQuote({
         groupId,
+        quoteId: quote.id,
         userId: user.id,
         values,
       });
 
-      reset();
       navigation.navigate('GroupDetail', {
         groupId,
         groupName: groupAccess.groupName ?? groupName ?? 'Group',
         refreshNonce: Date.now(),
-        newQuote: data,
       });
     } catch (error) {
-      Alert.alert('Create Quote Error', getQuoteMutationErrorMessage('create', error));
+      Alert.alert('Edit Quote Error', getQuoteMutationErrorMessage('update', error));
     }
   };
 
@@ -81,15 +83,42 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
     return (
       <View style={styles.centerState}>
         <Text style={styles.errorText}>{groupAccess.errorMessage}</Text>
-        <Button title="Back to Groups" onPress={() => navigation.navigate('Groups')} />
+        <Button
+          title="Back to Group"
+          onPress={() =>
+            navigation.navigate('GroupDetail', {
+              groupId,
+              groupName: groupAccess.groupName ?? groupName ?? 'Group',
+              refreshNonce: Date.now(),
+            })
+          }
+        />
+      </View>
+    );
+  }
+
+  if (!user || quote.created_by !== user.id) {
+    return (
+      <View style={styles.centerState}>
+        <Text style={styles.errorText}>You can only edit quotes you created.</Text>
+        <Button
+          title="Back to Group"
+          onPress={() =>
+            navigation.navigate('GroupDetail', {
+              groupId,
+              groupName: groupAccess.groupName ?? groupName ?? 'Group',
+              refreshNonce: Date.now(),
+            })
+          }
+        />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Quote</Text>
-      <Text style={styles.subtitle}>Adding to {groupAccess.groupName}</Text>
+      <Text style={styles.title}>Edit Quote</Text>
+      <Text style={styles.subtitle}>Updating a quote in {groupAccess.groupName}</Text>
 
       <Controller
         control={control}
@@ -144,7 +173,7 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
       {errors.context ? <Text style={styles.errorText}>{errors.context.message}</Text> : null}
 
       <Button
-        title={isSubmitting ? 'Saving quote...' : 'Save Quote'}
+        title={isSubmitting ? 'Saving changes...' : 'Save Changes'}
         onPress={handleSubmit(onSubmit)}
         disabled={isSubmitting}
       />
@@ -154,7 +183,13 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 10 },
-  centerState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 24 },
+  centerState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
+  },
   title: { fontSize: 24, fontWeight: '700' },
   subtitle: { fontSize: 16, color: '#555555', marginBottom: 8 },
   input: {

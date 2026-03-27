@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test:supabase:e2e": "node --test --test-reporter=spec ./scripts/test-supabase-e2e.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
