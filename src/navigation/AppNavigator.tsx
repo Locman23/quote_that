@@ -46,7 +46,11 @@ function AppNavigator() {
         headerRight: () => <LogoutButton />,
       }}
     >
-      <AppStack.Screen name="Groups" component={GroupsScreen} />
+      <AppStack.Screen
+        name="Groups"
+        component={GroupsScreen}
+        options={{ headerShown: false }}
+      />
       <AppStack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <AppStack.Screen name="JoinGroup" component={JoinGroupScreen} />
       <AppStack.Screen name="GroupDetail" component={GroupDetailScreen} />
