@@ -3,12 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ActivityIndicator,
   Alert,
-  Button,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { updateOwnQuote } from '../../lib/quotes';
 import { useAuthStore } from '../../store/authStore';
@@ -19,8 +20,11 @@ import {
   quoteFormSchema,
   type QuoteFormData,
 } from './quoteForm';
+import CircleIconButton from '../../components/CircleIconButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditQuote'>;
+
+const ACCENT = '#6DBF8A';
 
 export default function EditQuoteScreen({ route, navigation }: Props) {
   const { groupId, groupName, quote } = route.params;
@@ -60,7 +64,7 @@ export default function EditQuoteScreen({ route, navigation }: Props) {
         values,
       });
 
-      navigation.navigate('GroupDetail', {
+      navigation.replace('GroupDetail', {
         groupId,
         groupName: groupAccess.groupName ?? groupName ?? 'Group',
         refreshNonce: Date.now(),
@@ -72,117 +76,170 @@ export default function EditQuoteScreen({ route, navigation }: Props) {
 
   if (groupAccess.isLoading) {
     return (
-      <View style={styles.centerState}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.stateText}>Checking group access...</Text>
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color={ACCENT} />
+          <Text style={styles.stateText}>Checking group access...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!groupAccess.hasAccess) {
     return (
-      <View style={styles.centerState}>
-        <Text style={styles.errorText}>{groupAccess.errorMessage}</Text>
-        <Button
-          title="Back to Group"
-          onPress={() =>
-            navigation.navigate('GroupDetail', {
-              groupId,
-              groupName: groupAccess.groupName ?? groupName ?? 'Group',
-              refreshNonce: Date.now(),
-            })
-          }
-        />
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centerState}>
+          <Text style={styles.errorText}>{groupAccess.errorMessage}</Text>
+          <CircleIconButton
+            icon="‹"
+            accessibilityLabel="Back to group"
+            onPress={() =>
+              navigation.navigate('GroupDetail', {
+                groupId,
+                groupName: groupAccess.groupName ?? groupName ?? 'Group',
+                refreshNonce: Date.now(),
+              })
+            }
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!user || quote.created_by !== user.id) {
     return (
-      <View style={styles.centerState}>
-        <Text style={styles.errorText}>You can only edit quotes you created.</Text>
-        <Button
-          title="Back to Group"
-          onPress={() =>
-            navigation.navigate('GroupDetail', {
-              groupId,
-              groupName: groupAccess.groupName ?? groupName ?? 'Group',
-              refreshNonce: Date.now(),
-            })
-          }
-        />
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centerState}>
+          <Text style={styles.errorText}>You can only edit quotes you created.</Text>
+          <CircleIconButton
+            icon="‹"
+            accessibilityLabel="Back to group"
+            onPress={() =>
+              navigation.navigate('GroupDetail', {
+                groupId,
+                groupName: groupAccess.groupName ?? groupName ?? 'Group',
+                refreshNonce: Date.now(),
+              })
+            }
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Edit Quote</Text>
-      <Text style={styles.subtitle}>Updating a quote in {groupAccess.groupName}</Text>
-
-      <Controller
-        control={control}
-        name="content"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            style={[styles.input, styles.multilineInput]}
-            placeholder="Quote text"
-            multiline
-            textAlignVertical="top"
-            autoCorrect
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <View style={styles.topRow}>
+          <CircleIconButton
+            icon="‹"
+            accessibilityLabel="Back to group"
+            onPress={() =>
+              navigation.navigate('GroupDetail', {
+                groupId,
+                groupName: groupAccess.groupName ?? groupName ?? 'Group',
+                refreshNonce: Date.now(),
+              })
+            }
           />
-        )}
-      />
-      {errors.content ? <Text style={styles.errorText}>{errors.content.message}</Text> : null}
+          <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.title}>Edit Quote</Text>
+          <Text style={styles.subtitle}>Updating a quote in {groupAccess.groupName}</Text>
 
-      <Controller
-        control={control}
-        name="quotedPersonName"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Who said it"
-            autoCapitalize="words"
-            autoCorrect={false}
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
+          <Controller
+            control={control}
+            name="content"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={[styles.input, styles.multilineInput]}
+                placeholder="Quote text"
+                placeholderTextColor="#AAAAAA"
+                multiline
+                textAlignVertical="top"
+                autoCorrect
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
           />
-        )}
-      />
-      {errors.quotedPersonName ? <Text style={styles.errorText}>{errors.quotedPersonName.message}</Text> : null}
+          {errors.content ? <Text style={styles.fieldErrorText}>{errors.content.message}</Text> : null}
 
-      <Controller
-        control={control}
-        name="context"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Context (optional)"
-            autoCapitalize="sentences"
-            autoCorrect
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
+          <Controller
+            control={control}
+            name="quotedPersonName"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={styles.input}
+                placeholder="Who said it"
+                placeholderTextColor="#AAAAAA"
+                autoCapitalize="words"
+                autoCorrect={false}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
           />
-        )}
-      />
-      {errors.context ? <Text style={styles.errorText}>{errors.context.message}</Text> : null}
+          {errors.quotedPersonName ? <Text style={styles.fieldErrorText}>{errors.quotedPersonName.message}</Text> : null}
 
-      <Button
-        title={isSubmitting ? 'Saving changes...' : 'Save Changes'}
-        onPress={handleSubmit(onSubmit)}
-        disabled={isSubmitting}
-      />
-    </View>
+          <Controller
+            control={control}
+            name="context"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={styles.input}
+                placeholder="Context (optional)"
+                placeholderTextColor="#AAAAAA"
+                autoCapitalize="sentences"
+                autoCorrect
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
+          />
+          {errors.context ? <Text style={styles.fieldErrorText}>{errors.context.message}</Text> : null}
+
+          <TouchableOpacity
+            style={[styles.primaryBtn, isSubmitting && styles.disabledBtn]}
+            activeOpacity={0.8}
+            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? <ActivityIndicator size="small" color="#FFFFFF" />
+              : <Text style={styles.primaryBtnText}>Save Changes</Text>
+            }
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 10 },
+  safe: {
+    flex: 1,
+    backgroundColor: '#F5F6FA',
+  },
+  container: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  card: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   centerState: {
     flex: 1,
     justifyContent: 'center',
@@ -190,19 +247,40 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 24,
   },
-  title: { fontSize: 24, fontWeight: '700' },
-  subtitle: { fontSize: 16, color: '#555555', marginBottom: 8 },
+  title: { fontSize: 24, fontWeight: '800', color: '#1A1A1A' },
+  subtitle: { fontSize: 14, color: '#777777', marginBottom: 4 },
   input: {
-    borderWidth: 1,
-    borderColor: '#D0D0D0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F6FA',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#1A1A1A',
+    fontSize: 15,
   },
   multilineInput: {
     minHeight: 120,
   },
-  stateText: { fontSize: 16, color: '#444444', textAlign: 'center' },
-  errorText: { fontSize: 16, color: '#B00020', textAlign: 'center' },
+  stateText: { fontSize: 15, color: '#777777', textAlign: 'center' },
+  errorText: { fontSize: 15, color: '#B00020', textAlign: 'center' },
+  fieldErrorText: {
+    color: '#B00020',
+    fontSize: 13,
+    marginTop: -6,
+    marginBottom: 2,
+  },
+  primaryBtn: {
+    backgroundColor: ACCENT,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  disabledBtn: {
+    opacity: 0.5,
+  },
 });

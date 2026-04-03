@@ -163,10 +163,10 @@ export default function GroupsScreen({ navigation }: Props) {
         style={[styles.header, selectingGroup && styles.dimmed]}
         pointerEvents={selectingGroup ? 'none' : 'auto'}
       >
-        <Pressable style={styles.avatar}>
+        <Pressable style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
           <Text style={styles.avatarText}>{usernameInitial}</Text>
         </Pressable>
-        <Pressable style={styles.settingsBtn}>
+        <Pressable style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
           <Text style={styles.settingsIcon}>⚙︎</Text>
         </Pressable>
       </View>

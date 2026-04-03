@@ -3,16 +3,19 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
-  Button,
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
+import CircleIconButton from '../../components/CircleIconButton';
 
 const createGroupSchema = z.object({
   name: z
@@ -24,6 +27,8 @@ const createGroupSchema = z.object({
 
 type CreateGroupFormData = z.infer<typeof createGroupSchema>;
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateGroup'>;
+
+const ACCENT = '#6DBF8A';
 
 function getCreateGroupErrorMessage(error: unknown) {
   const fallbackMessage = 'Unable to create the group right now.';
@@ -95,60 +100,115 @@ export default function CreateGroupScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Group</Text>
-      <Text style={styles.subtitle}>Give your group a name and we will generate a join code for you.</Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <View style={styles.topRow}>
+          <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.title}>Create Group</Text>
+          <Text style={styles.subtitle}>Give your group a name and we will generate a join code for you.</Text>
 
-      <Controller
-        control={control}
-        name="name"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Group Name"
-            autoCapitalize="words"
-            autoCorrect={false}
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={styles.input}
+                placeholder="Group Name"
+                placeholderTextColor="#AAAAAA"
+                autoCapitalize="words"
+                autoCorrect={false}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
           />
-        )}
-      />
-      {errors.name ? <Text style={styles.errorText}>{errors.name.message}</Text> : null}
+          {errors.name ? <Text style={styles.errorText}>{errors.name.message}</Text> : null}
 
-      <Button
-        title={isSubmitting ? 'Creating group...' : 'Create Group'}
-        onPress={handleSubmit(onSubmit)}
-        disabled={isSubmitting}
-      />
-    </View>
+          <TouchableOpacity
+            style={[styles.primaryBtn, isSubmitting && styles.disabledBtn]}
+            activeOpacity={0.8}
+            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? <ActivityIndicator size="small" color="#FFFFFF" />
+              : <Text style={styles.primaryBtnText}>Create Group</Text>
+            }
+          </TouchableOpacity>
+
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#F5F6FA',
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    paddingTop: 8,
     paddingHorizontal: 20,
-    gap: 10,
   },
-  title: { fontSize: 24, fontWeight: '700' },
+  topRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  card: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1A1A1A',
+  },
   subtitle: {
-    color: '#555555',
-    fontSize: 15,
+    color: '#777777',
+    fontSize: 14,
     marginBottom: 4,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#D0D0D0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    backgroundColor: '#F5F6FA',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#1A1A1A',
+    fontSize: 15,
   },
   errorText: {
     color: '#B00020',
     fontSize: 13,
     marginTop: -6,
     marginBottom: 2,
+  },
+  primaryBtn: {
+    backgroundColor: ACCENT,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  disabledBtn: {
+    opacity: 0.5,
   },
 });
