@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +17,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { colors, radius, spacing, typography } from '../../theme';
 import type { QuoteRecord } from '../../types';
+import type { AppTabParamList, GroupsStackParamList } from '../../navigation/AppNavigator';
 
 type MembershipRow = {
   group_id: string;
@@ -30,16 +32,73 @@ type FeedQuote = QuoteRecord & {
   groupName?: string;
 };
 
-export default function HomeScreen() {
+type MemberGroup = {
+  id: string;
+  name: string;
+};
+
+type Props = BottomTabScreenProps<AppTabParamList, 'HomeTab'>;
+
+export default function HomeScreen({ navigation }: Props) {
   const user = useAuthStore((state) => state.user);
   const [quotes, setQuotes] = useState<FeedQuote[]>([]);
+  const [memberGroups, setMemberGroups] = useState<MemberGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const navigateToCreateQuote = useCallback((group: MemberGroup) => {
+    navigation.navigate('GroupsTab', {
+      screen: 'CreateQuote',
+      params: {
+        groupId: group.id,
+        groupName: group.name,
+      },
+    });
+  }, [navigation]);
+
+  const handleAddQuotePress = useCallback(() => {
+    if (memberGroups.length === 0) {
+      Alert.alert(
+        'No groups yet',
+        'You need to create or join a group before adding a quote.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Go to Groups',
+            onPress: () => {
+              navigation.navigate('GroupsTab');
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    if (memberGroups.length === 1) {
+      navigateToCreateQuote(memberGroups[0]);
+      return;
+    }
+
+    Alert.alert(
+      'Choose a group',
+      'Select a group to add your quote.',
+      [
+        ...memberGroups.map((group) => ({
+          text: group.name,
+          onPress: () => {
+            navigateToCreateQuote(group);
+          },
+        })),
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  }, [memberGroups, navigateToCreateQuote, navigation]);
+
   const loadFeed = useCallback(async (refresh = false) => {
     if (!user) {
       setQuotes([]);
+      setMemberGroups([]);
       setErrorMessage('You need to be signed in to view your feed.');
       setIsLoading(false);
       setIsRefreshing(false);
@@ -80,6 +139,8 @@ export default function HomeScreen() {
           };
         })
         .filter((group): group is { id: string; name: string } => group !== null);
+
+      setMemberGroups(groups);
 
       if (groups.length === 0) {
         setQuotes([]);
@@ -123,6 +184,7 @@ export default function HomeScreen() {
       setQuotes(nextQuotes);
     } catch (_error) {
       setQuotes([]);
+      setMemberGroups([]);
       setErrorMessage('Unable to load your feed right now. Please try again.');
     } finally {
       setIsLoading(false);
@@ -150,7 +212,7 @@ export default function HomeScreen() {
 
           <AppButton
             title="Add quote"
-            onPress={() => Alert.alert('Coming soon', 'Creating a quote from Home will be added soon.')}
+            onPress={handleAddQuotePress}
           />
         </View>
 
