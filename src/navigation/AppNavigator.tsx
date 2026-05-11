@@ -1,60 +1,104 @@
-import { Alert, Button } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import GroupsScreen from '../screens/groups/GroupsScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import JoinGroupScreen from '../screens/groups/JoinGroupScreen';
 import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
 import CreateQuoteScreen from '../screens/quotes/CreateQuoteScreen';
-import { useAuthStore } from '../store/authStore';
+import EditQuoteScreen from '../screens/quotes/EditQuoteScreen';
+import ProfileScreen from '../screens/profile/ProfileScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import HomeScreen from '../screens/home/HomeScreen';
+import SettingsTabScreen from '../screens/settings/SettingsTabScreen';
+import type { QuoteRecord } from '../types';
+import { colors, radius } from '../theme';
 
-export type AppStackParamList = {
+export type GroupsStackParamList = {
   Groups: undefined;
+  Profile: undefined;
+  Settings: undefined;
   CreateGroup: undefined;
   JoinGroup: undefined;
   GroupDetail: {
     groupId: string;
     groupName: string;
     refreshNonce?: number;
-    newQuote?: {
-      id: string;
-      quoted_person_name: string;
-      content: string;
-      context: string | null;
-      created_at: string;
-    };
+    newQuote?: QuoteRecord;
   };
   CreateQuote: { groupId: string; groupName?: string };
+  EditQuote: { groupId: string; groupName?: string; quote: QuoteRecord };
 };
 
-const AppStack = createNativeStackNavigator<AppStackParamList>();
+export type AppTabParamList = {
+  HomeTab: undefined;
+  GroupsTab: NavigatorScreenParams<GroupsStackParamList> | undefined;
+  SettingsTab: undefined;
+};
 
-function LogoutButton() {
-  const signOut = useAuthStore((state) => state.signOut);
+export type AppStackParamList = AppTabParamList & GroupsStackParamList;
 
-  const handlePress = async () => {
-    const error = await signOut();
+const GroupsStack = createNativeStackNavigator<GroupsStackParamList>();
+const AppTabs = createBottomTabNavigator<AppTabParamList>();
 
-    if (error) {
-      Alert.alert('Logout Warning', error.message);
-    }
-  };
-
-  return <Button title="Log Out" onPress={() => void handlePress()} />;
+function GroupsNavigator() {
+  return (
+    <GroupsStack.Navigator screenOptions={{ headerShown: false }}>
+      <GroupsStack.Screen name="Groups" component={GroupsScreen} />
+      <GroupsStack.Screen name="Settings" component={SettingsScreen} />
+      <GroupsStack.Screen name="Profile" component={ProfileScreen} />
+      <GroupsStack.Screen name="CreateGroup" component={CreateGroupScreen} />
+      <GroupsStack.Screen name="JoinGroup" component={JoinGroupScreen} />
+      <GroupsStack.Screen name="GroupDetail" component={GroupDetailScreen} />
+      <GroupsStack.Screen name="CreateQuote" component={CreateQuoteScreen} />
+      <GroupsStack.Screen name="EditQuote" component={EditQuoteScreen} />
+    </GroupsStack.Navigator>
+  );
 }
 
 function AppNavigator() {
   return (
-    <AppStack.Navigator
-      screenOptions={{
-        headerRight: () => <LogoutButton />,
-      }}
+    <AppTabs.Navigator
+      initialRouteName="GroupsTab"
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.text,
+        tabBarInactiveTintColor: colors.mutedText,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
+        tabBarIcon: ({ color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
+
+          if (route.name === 'HomeTab') {
+            iconName = 'home-outline';
+          } else if (route.name === 'GroupsTab') {
+            iconName = 'people-outline';
+          } else if (route.name === 'SettingsTab') {
+            iconName = 'settings-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        sceneStyle: {
+          backgroundColor: colors.background,
+        },
+      })}
     >
-      <AppStack.Screen name="Groups" component={GroupsScreen} />
-      <AppStack.Screen name="CreateGroup" component={CreateGroupScreen} />
-      <AppStack.Screen name="JoinGroup" component={JoinGroupScreen} />
-      <AppStack.Screen name="GroupDetail" component={GroupDetailScreen} />
-      <AppStack.Screen name="CreateQuote" component={CreateQuoteScreen} />
-    </AppStack.Navigator>
+      <AppTabs.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Home' }} />
+      <AppTabs.Screen name="GroupsTab" component={GroupsNavigator} options={{ title: 'Groups' }} />
+      <AppTabs.Screen name="SettingsTab" component={SettingsTabScreen} options={{ title: 'Settings' }} />
+    </AppTabs.Navigator>
   );
 }
 

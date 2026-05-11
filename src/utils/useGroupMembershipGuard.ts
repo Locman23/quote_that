@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
+import { isValidUuid } from '../lib/validation';
 import { useAuthStore } from '../store/authStore';
 
 type GroupAccessState = {
@@ -24,6 +25,18 @@ export function useGroupMembershipGuard(groupId: string, fallbackGroupName?: str
       let isActive = true;
 
       async function verifyGroupAccess() {
+        if (!isValidUuid(groupId)) {
+          if (isActive) {
+            setState({
+              groupName: fallbackGroupName ?? null,
+              isLoading: false,
+              hasAccess: false,
+              errorMessage: 'This group link is invalid.',
+            });
+          }
+          return;
+        }
+
         if (!user) {
           if (isActive) {
             setState({

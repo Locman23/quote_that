@@ -3,73 +3,74 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ActivityIndicator,
   Alert,
-  View,
-  Text,
   StyleSheet,
+  Text,
   TextInput,
+  View,
 } from 'react-native';
 import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { updateOwnQuote } from '../../lib/quotes';
+import { useAuthStore } from '../../store/authStore';
 import { RootStackParamList } from '../../types/navigation';
 import { useGroupMembershipGuard } from '../../utils/useGroupMembershipGuard';
-import { createQuote } from '../../lib/quotes';
-import { useAuthStore } from '../../store/authStore';
 import {
   getQuoteMutationErrorMessage,
   quoteFormSchema,
   type QuoteFormData,
 } from './quoteForm';
 import CircleIconButton from '../../components/CircleIconButton';
-import { colors, radius, spacing, typography } from '../../theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'CreateQuote'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'EditQuote'>;
 
 const ACCENT = '#6DBF8A';
 
-export default function CreateQuoteScreen({ route, navigation }: Props) {
-  const { groupId, groupName } = route.params;
-  const groupAccess = useGroupMembershipGuard(groupId);
+export default function EditQuoteScreen({ route, navigation }: Props) {
+  const { groupId, groupName, quote } = route.params;
   const user = useAuthStore((state) => state.user);
+  const groupAccess = useGroupMembershipGuard(groupId, groupName);
   const {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
-      content: '',
-      quotedPersonName: '',
-      context: '',
+      content: quote.content,
+      quotedPersonName: quote.quoted_person_name,
+      context: quote.context ?? '',
     },
   });
 
   const onSubmit = async (values: QuoteFormData) => {
     try {
       if (!user) {
-        throw new Error('You must be signed in to add a quote.');
+        throw new Error('You must be signed in to update a quote.');
+      }
+
+      if (quote.created_by !== user.id) {
+        throw new Error('You can only edit quotes you created.');
       }
 
       if (!groupAccess.hasAccess) {
         throw new Error('You no longer have access to this group.');
       }
 
-      const data = await createQuote({
+      await updateOwnQuote({
         groupId,
+        quoteId: quote.id,
         userId: user.id,
         values,
       });
 
-      reset();
       navigation.replace('GroupDetail', {
         groupId,
         groupName: groupAccess.groupName ?? groupName ?? 'Group',
         refreshNonce: Date.now(),
-        newQuote: data,
       });
     } catch (error) {
-      Alert.alert('Create Quote Error', getQuoteMutationErrorMessage('create', error));
+      Alert.alert('Edit Quote Error', getQuoteMutationErrorMessage('update', error));
     }
   };
 
@@ -89,7 +90,38 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.centerState}>
           <Text style={styles.errorText}>{groupAccess.errorMessage}</Text>
-          <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
+          <CircleIconButton
+            icon="‹"
+            accessibilityLabel="Back to group"
+            onPress={() =>
+              navigation.navigate('GroupDetail', {
+                groupId,
+                groupName: groupAccess.groupName ?? groupName ?? 'Group',
+                refreshNonce: Date.now(),
+              })
+            }
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!user || quote.created_by !== user.id) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centerState}>
+          <Text style={styles.errorText}>You can only edit quotes you created.</Text>
+          <CircleIconButton
+            icon="‹"
+            accessibilityLabel="Back to group"
+            onPress={() =>
+              navigation.navigate('GroupDetail', {
+                groupId,
+                groupName: groupAccess.groupName ?? groupName ?? 'Group',
+                refreshNonce: Date.now(),
+              })
+            }
+          />
         </View>
       </SafeAreaView>
     );
@@ -112,33 +144,27 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
           />
           <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
         </View>
-        <View style={styles.headerBlock}>
-          <Text style={styles.title}>Capture the quote</Text>
-          <Text style={styles.subtitle}>{groupAccess.groupName ?? groupName ?? 'Group'}</Text>
-        </View>
+        <View style={styles.card}>
+          <Text style={styles.title}>Edit Quote</Text>
+          <Text style={styles.subtitle}>Updating a quote in {groupAccess.groupName}</Text>
 
-        <View style={styles.formCard}>
-          <View style={styles.quoteInputWrap}>
-            <Text style={styles.openingMark}>"</Text>
-
-            <Controller
-              control={control}
-              name="content"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={styles.quoteInput}
-                  placeholder="Write the quote exactly as it was said..."
-                  placeholderTextColor={colors.mutedText}
-                  multiline
-                  textAlignVertical="top"
-                  autoCorrect
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
-          </View>
+          <Controller
+            control={control}
+            name="content"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={[styles.input, styles.multilineInput]}
+                placeholder="Quote text"
+                placeholderTextColor="#AAAAAA"
+                multiline
+                textAlignVertical="top"
+                autoCorrect
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
+          />
           {errors.content ? <Text style={styles.fieldErrorText}>{errors.content.message}</Text> : null}
 
           <Controller
@@ -148,7 +174,7 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="Who said it"
-                placeholderTextColor={colors.mutedText}
+                placeholderTextColor="#AAAAAA"
                 autoCapitalize="words"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -166,7 +192,7 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="Context (optional)"
-                placeholderTextColor={colors.mutedText}
+                placeholderTextColor="#AAAAAA"
                 autoCapitalize="sentences"
                 autoCorrect
                 onBlur={onBlur}
@@ -178,7 +204,7 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
           {errors.context ? <Text style={styles.fieldErrorText}>{errors.context.message}</Text> : null}
 
           <AppButton
-            title="Save Quote"
+            title="Save Changes"
             onPress={handleSubmit(onSubmit)}
             loading={isSubmitting}
             disabled={isSubmitting}
@@ -192,90 +218,64 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F5F6FA',
   },
-  container: {
+  container: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  card: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  headerBlock: {
-    marginBottom: spacing.md,
-    gap: spacing.xs,
-  },
-  formCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.sm,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
-  centerState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 24 },
-  title: {
-    ...typography.largeTitle,
-    color: colors.text,
-    fontSize: 34,
-    lineHeight: 38,
+  centerState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
   },
-  subtitle: {
-    ...typography.body,
-    color: colors.mutedText,
-  },
-  quoteInputWrap: {
-    position: 'relative',
-  },
-  openingMark: {
-    position: 'absolute',
-    top: 2,
-    left: 14,
-    fontSize: 52,
-    lineHeight: 52,
-    color: colors.border,
-    zIndex: 1,
-  },
-  quoteInput: {
-    ...typography.subtitle,
-    backgroundColor: colors.softAccent,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-    color: colors.text,
-    minHeight: 210,
-    textAlignVertical: 'top',
-  },
+  title: { fontSize: 24, fontWeight: '800', color: '#1A1A1A' },
+  subtitle: { fontSize: 14, color: '#777777', marginBottom: 4 },
   input: {
-    ...typography.body,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.sm + 6,
-    paddingVertical: spacing.sm + 4,
-    color: colors.text,
+    backgroundColor: '#F5F6FA',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#1A1A1A',
+    fontSize: 15,
   },
-  stateText: { ...typography.body, color: colors.mutedText, textAlign: 'center' },
-  errorText: { ...typography.body, color: colors.danger, textAlign: 'center' },
+  multilineInput: {
+    minHeight: 120,
+  },
+  stateText: { fontSize: 15, color: '#777777', textAlign: 'center' },
+  errorText: { fontSize: 15, color: '#B00020', textAlign: 'center' },
   fieldErrorText: {
-    ...typography.caption,
-    color: colors.danger,
-    marginTop: -2,
+    color: '#B00020',
+    fontSize: 13,
+    marginTop: -6,
     marginBottom: 2,
-    paddingLeft: 4,
+  },
+  primaryBtn: {
+    backgroundColor: ACCENT,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  disabledBtn: {
+    opacity: 0.5,
   },
 });

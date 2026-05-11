@@ -1,0 +1,25 @@
+Phase 7 — First Post-MVP Features
+
+Only do this after MVP works.
+
+45. Add reactions
+like/laugh reaction on quotes
+46. Add search
+
+Search quotes by:
+
+text
+person said
+group
+47. Add notifications
+
+Start simple:
+
+notification when a new quote is posted in a group
+48. Add profile screen
+display name
+email
+logout
+49. Add group settings
+leave group
+maybe rename group if admin

@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
-  Button,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import AppButton from '../../components/AppButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { supabase } from '../../lib/supabase';
@@ -20,6 +21,8 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+
+const ACCENT = '#6DBF8A';
 
 function getLoginErrorMessage(error: unknown): string {
   const fallbackMessage = 'Login failed. Please try again.';
@@ -76,74 +79,121 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Quote That</Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Quote That</Text>
 
-      {authError ? <Text style={styles.authErrorBanner}>{authError}</Text> : null}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Welcome back</Text>
+          <Text style={styles.cardSubtitle}>Sign in to access your groups and quotes.</Text>
 
-      <Controller
-        control={control}
-        name="email"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
+          {authError ? <Text style={styles.authErrorBanner}>{authError}</Text> : null}
+
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#AAAAAA"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
           />
-        )}
-      />
-      {errors.email ? <Text style={styles.errorText}>{errors.email.message}</Text> : null}
+          {errors.email ? <Text style={styles.errorText}>{errors.email.message}</Text> : null}
 
-      <Controller
-        control={control}
-        name="password"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            secureTextEntry
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#AAAAAA"
+                secureTextEntry
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
           />
-        )}
-      />
-      {errors.password ? <Text style={styles.errorText}>{errors.password.message}</Text> : null}
+          {errors.password ? <Text style={styles.errorText}>{errors.password.message}</Text> : null}
 
-      <Button
-        title={isSubmitting ? 'Signing in...' : 'Login'}
-        onPress={handleSubmit(onSubmit)}
-        disabled={isSubmitting}
-      />
+          <AppButton
+            title="Login"
+            onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
+            disabled={isSubmitting}
+          />
 
-      <Button
-        title="Go to Signup"
-        onPress={() => navigation.navigate('Signup')}
-        disabled={isSubmitting}
-      />
-    </View>
+          <AppButton
+            variant="secondary"
+            title="Go to Signup"
+            onPress={() => navigation.navigate('Signup')}
+            disabled={isSubmitting}
+          />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#F5F6FA',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
-    gap: 10,
+    gap: 14,
   },
-  title: { fontSize: 28, fontWeight: '700' },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  title: {
+    textAlign: 'center',
+    fontSize: 48,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: 1,
+    color: '#1A1A1A',
+    textShadowColor: ACCENT + '66',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: '#777777',
+    marginBottom: 4,
+  },
   input: {
-    borderWidth: 1,
-    borderColor: '#D0D0D0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    backgroundColor: '#F5F6FA',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#1A1A1A',
+    fontSize: 15,
   },
   errorText: {
     color: '#B00020',
@@ -154,8 +204,36 @@ const styles = StyleSheet.create({
   authErrorBanner: {
     color: '#B00020',
     backgroundColor: '#FDECEC',
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  primaryBtn: {
+    backgroundColor: ACCENT,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  secondaryBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: ACCENT,
+  },
+  secondaryBtnText: {
+    color: ACCENT,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  disabledBtn: {
+    opacity: 0.5,
   },
 });
