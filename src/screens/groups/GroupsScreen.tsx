@@ -19,7 +19,10 @@ import { RootStackParamList } from '../../types/navigation';
 import { supabase } from '../../lib/supabase';
 import { createQuote } from '../../lib/quotes';
 import { useAuthStore } from '../../store/authStore';
+import EmptyState from '../../components/EmptyState';
+import ErrorState from '../../components/ErrorState';
 import GroupCard from '../../components/GroupCard';
+import LoadingState from '../../components/LoadingState';
 
 const ACCENT = '#6DBF8A';
 
@@ -218,18 +221,15 @@ export default function GroupsScreen({ navigation }: Props) {
 
         {/* ── Groups section ── */}
         {isLoading ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator size="large" color={ACCENT} />
-            <Text style={styles.stateText}>Loading your groups…</Text>
-          </View>
+          <LoadingState message="Loading your groups..." />
         ) : errorMessage ? (
-          <View style={styles.centerState}>
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
+          <ErrorState title="Could not load groups" message={errorMessage} />
         ) : groups.length === 0 ? (
-          <View style={styles.centerState}>
-            <Text style={styles.emptyIcon}>👥</Text>
-            <Text style={styles.stateText}>You haven't joined any groups yet.</Text>
+          <View style={styles.emptyStateWrap}>
+            <EmptyState
+              title="No groups yet"
+              message="You have not joined any groups yet. Create one or join with a code to get started."
+            />
             <View style={styles.emptyActions}>
               <TouchableOpacity
                 style={styles.primaryBtn}
@@ -392,9 +392,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#333',
   },
-  emptyIcon: {
-    fontSize: 48,
-  },
 
   /* Content */
   content: {
@@ -478,22 +475,10 @@ const styles = StyleSheet.create({
   },
 
   /* States */
-  centerState: {
+  emptyStateWrap: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    paddingBottom: 40,
-  },
-  stateText: {
-    fontSize: 15,
-    color: '#777777',
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 15,
-    color: '#B00020',
-    textAlign: 'center',
+    gap: 10,
   },
 
   /* Group list */
