@@ -60,7 +60,7 @@ function GroupsNavigator() {
 function AppNavigator() {
   return (
     <AppTabs.Navigator
-      initialRouteName="GroupsTab"
+      initialRouteName="HomeTab"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.text,
