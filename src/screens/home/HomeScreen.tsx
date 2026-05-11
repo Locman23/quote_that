@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -138,10 +139,22 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Home</Text>
-          <Text style={styles.subtitle}>Recent quotes across your groups</Text>
+        <View style={styles.heroCard}>
+          <Text style={styles.appTitle}>Quote That</Text>
+          <Text style={styles.greetingText}>
+            {`Hey ${typeof user?.user_metadata?.username === 'string'
+              ? user.user_metadata.username
+              : 'there'}`}
+          </Text>
+          <Text style={styles.subtitle}>A calm stream of recent quotes from your groups.</Text>
+
+          <AppButton
+            title="Add quote"
+            onPress={() => Alert.alert('Coming soon', 'Creating a quote from Home will be added soon.')}
+          />
         </View>
+
+        <Text style={styles.sectionHeading}>Recent quotes</Text>
 
         {isLoading ? (
           <View style={styles.centerState}>
@@ -196,23 +209,48 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
   },
-  header: {
-    gap: spacing.xs,
-    marginBottom: spacing.md,
+  heroCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  title: {
-    ...typography.title,
+  appTitle: {
+    ...typography.caption,
+    color: colors.mutedText,
+    letterSpacing: 0.7,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  greetingText: {
+    ...typography.largeTitle,
     color: colors.text,
-    fontSize: 28,
+    fontSize: 30,
+    lineHeight: 34,
     fontWeight: '700',
   },
   subtitle: {
     ...typography.body,
     color: colors.mutedText,
   },
+  sectionHeading: {
+    ...typography.subtitle,
+    color: colors.text,
+    fontWeight: '700',
+    marginTop: 2,
+  },
   listContent: {
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingBottom: spacing.lg,
   },
   centerState: {
