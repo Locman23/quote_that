@@ -91,7 +91,7 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
             title="Access denied"
             message={groupAccess.errorMessage ?? 'You no longer have access to this group.'}
           />
-          <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
+          <CircleIconButton icon="⌂" accessibilityLabel="Back to groups" onPress={() => navigation.navigate('Groups')} />
         </View>
       </SafeAreaView>
     );
