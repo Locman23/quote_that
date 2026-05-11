@@ -16,10 +16,46 @@ interface QuoteCardProps {
   isEdited?: boolean;
 }
 
-function formatDate(value: string): string {
+function formatShortDate(date: Date, now: Date): string {
+  const isSameYear = date.getFullYear() === now.getFullYear();
+
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    ...(isSameYear ? {} : { year: 'numeric' }),
+  });
+}
+
+function formatRelativeDate(value: string): string {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Unknown date';
-  return date.toLocaleString();
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Unknown date';
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const targetStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.floor((todayStart - targetStart) / dayMs);
+
+  if (diffDays === 0) {
+    return 'Today';
+  }
+
+  if (diffDays === 1) {
+    return 'Yesterday';
+  }
+
+  if (diffDays > 1 && diffDays < 7) {
+    return `${diffDays}d ago`;
+  }
+
+  if (diffDays >= 7 && diffDays < 28) {
+    return `${Math.floor(diffDays / 7)}w ago`;
+  }
+
+  return formatShortDate(date, now);
 }
 
 export default function QuoteCard({
@@ -57,14 +93,14 @@ export default function QuoteCard({
 
         <Text style={styles.person}>{'\u2014\u00A0'}{quotedPersonName}</Text>
 
-        {(context || groupName || createdAt) ? (
+        {(context || groupName || createdAt || isEdited) ? (
           <View style={styles.meta}>
             {context ? (
               <Text style={styles.context}>{context}</Text>
             ) : null}
-            {(groupName || createdAt) ? (
+            {(groupName || createdAt || isEdited) ? (
               <Text style={styles.metaLine}>
-                {[groupName, createdAt ? formatDate(createdAt) : null, isEdited ? 'Edited' : null]
+                {[groupName, createdAt ? formatRelativeDate(createdAt) : null, isEdited ? 'Edited' : null]
                   .filter(Boolean)
                   .join(' · ')}
               </Text>

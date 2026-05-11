@@ -17,7 +17,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { colors, radius, spacing, typography } from '../../theme';
 import type { QuoteRecord } from '../../types';
-import type { AppTabParamList, GroupsStackParamList } from '../../navigation/AppNavigator';
+import type { AppTabParamList} from '../../navigation/AppNavigator';
 
 type MembershipRow = {
   group_id: string;
