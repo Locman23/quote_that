@@ -19,6 +19,9 @@ import { useAuthStore } from '../../store/authStore';
 import type { QuoteRecord } from '../../types';
 import { getQuoteMutationErrorMessage } from '../quotes/quoteForm';
 import CircleIconButton from '../../components/CircleIconButton';
+import EmptyState from '../../components/EmptyState';
+import ErrorState from '../../components/ErrorState';
+import LoadingState from '../../components/LoadingState';
 import QuoteCard from '../../components/QuoteCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GroupDetail'>;
@@ -198,9 +201,8 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
   if (groupAccess.isLoading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.centerState}>
-          <ActivityIndicator size="large" color={ACCENT} />
-          <Text style={styles.stateText}>Checking group access...</Text>
+        <View style={styles.screenStateWrap}>
+          <LoadingState message="Checking group access..." />
         </View>
       </SafeAreaView>
     );
@@ -209,8 +211,11 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
   if (!groupAccess.hasAccess) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.centerState}>
-          <Text style={styles.errorText}>{groupAccess.errorMessage}</Text>
+        <View style={styles.screenStateWrap}>
+          <ErrorState
+            title="Access denied"
+            message={groupAccess.errorMessage ?? 'You do not have access to this group.'}
+          />
           <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
         </View>
       </SafeAreaView>
@@ -250,18 +255,16 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
         ) : null}
 
         {isLoadingQuotes ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator size="large" color={ACCENT} />
-            <Text style={styles.stateText}>Loading quotes...</Text>
-          </View>
+          <LoadingState message="Loading quotes..." />
         ) : quotesErrorMessage ? (
-          <View style={styles.centerState}>
-            <Text style={styles.errorText}>{quotesErrorMessage}</Text>
-          </View>
+          <ErrorState title="Could not load quotes" message={quotesErrorMessage} />
         ) : quotes.length === 0 ? (
-          <View style={styles.centerState}>
-            <Text style={styles.stateText}>No quotes yet. Add the first one for this group.</Text>
-          </View>
+          <EmptyState
+            title="No quotes yet"
+            message="No quotes yet. Add the first one for this group."
+            actionLabel="Add Quote"
+            onAction={() => navigation.navigate('CreateQuote', { groupId, groupName: resolvedGroupName })}
+          />
         ) : (
           <FlatList
             data={quotes}
@@ -339,7 +342,13 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   headerActions: { flexDirection: 'row', gap: 10 },
-  centerState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 24 },
+  screenStateWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
+  },
   inlineRefreshState: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -349,8 +358,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#777777',
   },
-  stateText: { fontSize: 15, color: '#777777', textAlign: 'center' },
-  errorText: { fontSize: 15, color: '#B00020', textAlign: 'center' },
   listContent: { gap: 12, paddingBottom: 12 },
   quoteActions: {
     flexDirection: 'row',
