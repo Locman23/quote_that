@@ -19,6 +19,7 @@ import { RootStackParamList } from '../../types/navigation';
 import { supabase } from '../../lib/supabase';
 import { createQuote } from '../../lib/quotes';
 import { useAuthStore } from '../../store/authStore';
+import GroupCard from '../../components/GroupCard';
 
 const ACCENT = '#6DBF8A';
 
@@ -94,6 +95,17 @@ export default function GroupsScreen({ navigation }: Props) {
       : user?.email?.[0] ?? '?'
     ).toUpperCase();
 
+  function handleOpenSettings() {
+    const parentNavigation = navigation.getParent();
+
+    if (parentNavigation) {
+      parentNavigation.navigate('SettingsTab' as never);
+      return;
+    }
+
+    navigation.navigate('Settings');
+  }
+
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -166,7 +178,7 @@ export default function GroupsScreen({ navigation }: Props) {
         <Pressable style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
           <Text style={styles.avatarText}>{usernameInitial}</Text>
         </Pressable>
-        <Pressable style={styles.settingsBtn} onPress={() => navigation.navigate('Settings')}>
+        <Pressable style={styles.settingsBtn} onPress={handleOpenSettings}>
           <Text style={styles.settingsIcon}>⚙︎</Text>
         </Pressable>
       </View>
@@ -250,35 +262,25 @@ export default function GroupsScreen({ navigation }: Props) {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.groupCard,
-                  pressed && styles.groupCardPressed,
-                  selectingGroup && styles.groupCardSelecting,
-                ]}
-                disabled={isSaving}
-                onPress={() =>
-                  selectingGroup
-                    ? handleGroupTapped(item.id)
-                    : navigation.navigate('GroupDetail', {
-                        groupId: item.id,
-                        groupName: item.name,
-                      })
-                }
-              >
-                <View style={styles.groupCardLeft}>
-                  <View style={styles.groupIcon}>
-                    <Text style={styles.groupIconText}>{item.name[0]?.toUpperCase()}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.groupName}>{item.name}</Text>
-                    <Text style={styles.groupMeta}>Code: {item.join_code}</Text>
-                  </View>
-                </View>
-                <Text style={[styles.chevron, selectingGroup && styles.chevronSelect]}>
-                  {selectingGroup ? '+' : '›'}
-                </Text>
-              </Pressable>
+              <GroupCard
+                name={item.name}
+                joinCode={item.join_code}
+                onPress={() => {
+                  if (isSaving) {
+                    return;
+                  }
+
+                  if (selectingGroup) {
+                    handleGroupTapped(item.id);
+                    return;
+                  }
+
+                  navigation.navigate('GroupDetail', {
+                    groupId: item.id,
+                    groupName: item.name,
+                  });
+                }}
+              />
             )}
             ListFooterComponent={
               !selectingGroup ? (
@@ -393,20 +395,6 @@ const styles = StyleSheet.create({
   emptyIcon: {
     fontSize: 48,
   },
-  groupCardSelecting: {
-    borderWidth: 1.5,
-    borderColor: ACCENT,
-  },
-  chevron: {
-    fontSize: 24,
-    color: '#CCCCCC',
-    lineHeight: 28,
-  },
-  chevronSelect: {
-    fontSize: 22,
-    color: ACCENT,
-    fontWeight: '700',
-  },
 
   /* Content */
   content: {
@@ -513,50 +501,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
     flexGrow: 1,
-  },
-  groupCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  groupCardPressed: {
-    opacity: 0.85,
-  },
-  groupCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  groupIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: ACCENT + '1A',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  groupIconText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: ACCENT,
-  },
-  groupName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  groupMeta: {
-    fontSize: 13,
-    color: '#999999',
-    marginTop: 2,
   },
 
   /* Buttons */

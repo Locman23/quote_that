@@ -8,7 +8,6 @@ import {
   Pressable,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -20,6 +19,7 @@ import { useAuthStore } from '../../store/authStore';
 import type { QuoteRecord } from '../../types';
 import { getQuoteMutationErrorMessage } from '../quotes/quoteForm';
 import CircleIconButton from '../../components/CircleIconButton';
+import QuoteCard from '../../components/QuoteCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GroupDetail'>;
 
@@ -272,15 +272,14 @@ export default function GroupDetailScreen({ route, navigation }: Props) {
               const isDeletingThisQuote = deletingQuoteId === item.id;
 
               return (
-                <View style={styles.quoteCard}>
-                  <Text style={styles.quotePerson}>{item.quoted_person_name}</Text>
-                  <Text style={styles.quoteContent}>{item.content}</Text>
-                  {item.context ? <Text style={styles.quoteContext}>{item.context}</Text> : null}
-                  <Text style={styles.quoteMeta}>
-                    {formatCreatedAt(item.created_at)}
-                    {item.updated_at !== item.created_at ? ' • Edited' : ''}
-                  </Text>
-
+                <View>
+                  <QuoteCard
+                    quotedPersonName={item.quoted_person_name}
+                    content={item.content}
+                    context={item.context ?? undefined}
+                    createdAt={item.created_at}
+                    isEdited={item.updated_at !== item.created_at}
+                  />
                   {isOwnQuote ? (
                     <View style={styles.quoteActions}>
                       <Pressable
@@ -353,21 +352,6 @@ const styles = StyleSheet.create({
   stateText: { fontSize: 15, color: '#777777', textAlign: 'center' },
   errorText: { fontSize: 15, color: '#B00020', textAlign: 'center' },
   listContent: { gap: 12, paddingBottom: 12 },
-  quoteCard: {
-    borderRadius: 14,
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  quotePerson: { fontSize: 17, fontWeight: '700', color: '#1A1A1A' },
-  quoteContent: { fontSize: 16, color: '#111111' },
-  quoteContext: { fontSize: 14, color: '#666666' },
-  quoteMeta: { fontSize: 12, color: '#888888' },
   quoteActions: {
     flexDirection: 'row',
     gap: 10,

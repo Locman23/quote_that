@@ -7,8 +7,8 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
 } from 'react-native';
+import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -21,6 +21,7 @@ import {
   type QuoteFormData,
 } from './quoteForm';
 import CircleIconButton from '../../components/CircleIconButton';
+import { colors, radius, spacing, typography } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateQuote'>;
 
@@ -111,27 +112,33 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
           />
           <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
         </View>
-        <View style={styles.card}>
-          <Text style={styles.title}>Create Quote</Text>
-          <Text style={styles.subtitle}>Adding to {groupAccess.groupName}</Text>
+        <View style={styles.headerBlock}>
+          <Text style={styles.title}>Capture the quote</Text>
+          <Text style={styles.subtitle}>{groupAccess.groupName ?? groupName ?? 'Group'}</Text>
+        </View>
 
-          <Controller
-            control={control}
-            name="content"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                style={[styles.input, styles.multilineInput]}
-                placeholder="Quote text"
-                placeholderTextColor="#AAAAAA"
-                multiline
-                textAlignVertical="top"
-                autoCorrect
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
+        <View style={styles.formCard}>
+          <View style={styles.quoteInputWrap}>
+            <Text style={styles.openingMark}>"</Text>
+
+            <Controller
+              control={control}
+              name="content"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  style={styles.quoteInput}
+                  placeholder="Write the quote exactly as it was said..."
+                  placeholderTextColor={colors.mutedText}
+                  multiline
+                  textAlignVertical="top"
+                  autoCorrect
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+          </View>
           {errors.content ? <Text style={styles.fieldErrorText}>{errors.content.message}</Text> : null}
 
           <Controller
@@ -141,7 +148,7 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="Who said it"
-                placeholderTextColor="#AAAAAA"
+                placeholderTextColor={colors.mutedText}
                 autoCapitalize="words"
                 autoCorrect={false}
                 onBlur={onBlur}
@@ -159,7 +166,7 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="Context (optional)"
-                placeholderTextColor="#AAAAAA"
+                placeholderTextColor={colors.mutedText}
                 autoCapitalize="sentences"
                 autoCorrect
                 onBlur={onBlur}
@@ -170,17 +177,12 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
           />
           {errors.context ? <Text style={styles.fieldErrorText}>{errors.context.message}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, isSubmitting && styles.disabledBtn]}
-            activeOpacity={0.8}
+          <AppButton
+            title="Save Quote"
             onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
             disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? <ActivityIndicator size="small" color="#FFFFFF" />
-              : <Text style={styles.primaryBtnText}>Save Quote</Text>
-            }
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -190,58 +192,90 @@ export default function CreateQuoteScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  card: {
+  container: {
     flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  headerBlock: {
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  formCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.sm,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
   },
   centerState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 24 },
-  title: { fontSize: 24, fontWeight: '800', color: '#1A1A1A' },
-  subtitle: { fontSize: 14, color: '#777777', marginBottom: 4 },
+  title: {
+    ...typography.largeTitle,
+    color: colors.text,
+    fontSize: 34,
+    lineHeight: 38,
+  },
+  subtitle: {
+    ...typography.body,
+    color: colors.mutedText,
+  },
+  quoteInputWrap: {
+    position: 'relative',
+  },
+  openingMark: {
+    position: 'absolute',
+    top: 2,
+    left: 14,
+    fontSize: 52,
+    lineHeight: 52,
+    color: colors.border,
+    zIndex: 1,
+  },
+  quoteInput: {
+    ...typography.subtitle,
+    backgroundColor: colors.softAccent,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.md,
+    color: colors.text,
+    minHeight: 210,
+    textAlignVertical: 'top',
+  },
   input: {
-    backgroundColor: '#F5F6FA',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#1A1A1A',
-    fontSize: 15,
+    ...typography.body,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.sm + 6,
+    paddingVertical: spacing.sm + 4,
+    color: colors.text,
   },
-  multilineInput: {
-    minHeight: 120,
-  },
-  stateText: { fontSize: 15, color: '#777777', textAlign: 'center' },
-  errorText: { fontSize: 15, color: '#B00020', textAlign: 'center' },
+  stateText: { ...typography.body, color: colors.mutedText, textAlign: 'center' },
+  errorText: { ...typography.body, color: colors.danger, textAlign: 'center' },
   fieldErrorText: {
-    color: '#B00020',
-    fontSize: 13,
-    marginTop: -6,
+    ...typography.caption,
+    color: colors.danger,
+    marginTop: -2,
     marginBottom: 2,
-  },
-  primaryBtn: {
-    backgroundColor: ACCENT,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  disabledBtn: {
-    opacity: 0.5,
+    paddingLeft: 4,
   },
 });

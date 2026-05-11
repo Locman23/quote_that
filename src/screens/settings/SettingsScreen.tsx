@@ -1,4 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -19,9 +20,7 @@ export default function SettingsScreen({ navigation }: Props) {
           <Text style={styles.title}>Settings</Text>
           <Text style={styles.subtitle}>More settings are coming soon.</Text>
 
-          <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.primaryBtnText}>Open Profile</Text>
-          </TouchableOpacity>
+          <AppButton title="Open Profile" onPress={() => navigation.navigate('Profile')} />
 
         </View>
       </View>

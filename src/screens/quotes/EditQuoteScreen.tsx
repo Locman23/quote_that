@@ -6,9 +6,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { updateOwnQuote } from '../../lib/quotes';
@@ -203,17 +203,12 @@ export default function EditQuoteScreen({ route, navigation }: Props) {
           />
           {errors.context ? <Text style={styles.fieldErrorText}>{errors.context.message}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, isSubmitting && styles.disabledBtn]}
-            activeOpacity={0.8}
+          <AppButton
+            title="Save Changes"
             onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
             disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? <ActivityIndicator size="small" color="#FFFFFF" />
-              : <Text style={styles.primaryBtnText}>Save Changes</Text>
-            }
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </SafeAreaView>

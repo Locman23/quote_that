@@ -3,13 +3,12 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
-  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -127,17 +126,12 @@ export default function CreateGroupScreen({ navigation }: Props) {
           />
           {errors.name ? <Text style={styles.errorText}>{errors.name.message}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, isSubmitting && styles.disabledBtn]}
-            activeOpacity={0.8}
+          <AppButton
+            title="Create Group"
             onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
             disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? <ActivityIndicator size="small" color="#FFFFFF" />
-              : <Text style={styles.primaryBtnText}>Create Group</Text>
-            }
-          </TouchableOpacity>
+          />
 
         </View>
       </View>

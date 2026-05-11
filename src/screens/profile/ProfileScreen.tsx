@@ -3,15 +3,14 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -289,17 +288,12 @@ export default function ProfileScreen({ navigation }: Props) {
           />
           {errors.email ? <Text style={styles.errorText}>{errors.email.message}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, isUpdatingProfile && styles.disabledBtn]}
-            activeOpacity={0.8}
+          <AppButton
+            title="Update Profile"
             onPress={() => void updateProfile()}
+            loading={isUpdatingProfile}
             disabled={isUpdatingProfile || isUpdatingPassword || isLoggingOut}
-          >
-            {isUpdatingProfile
-              ? <ActivityIndicator size="small" color="#FFFFFF" />
-              : <Text style={styles.primaryBtnText}>Update Profile</Text>
-            }
-          </TouchableOpacity>
+          />
         </View>
 
         <View style={styles.card}>
@@ -339,30 +333,21 @@ export default function ProfileScreen({ navigation }: Props) {
           />
           {errors.confirmNewPassword ? <Text style={styles.errorText}>{errors.confirmNewPassword.message}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, isUpdatingPassword && styles.disabledBtn]}
-            activeOpacity={0.8}
+          <AppButton
+            title="Update Password"
             onPress={() => void updatePassword()}
+            loading={isUpdatingPassword}
             disabled={isUpdatingProfile || isUpdatingPassword || isLoggingOut}
-          >
-            {isUpdatingPassword
-              ? <ActivityIndicator size="small" color="#FFFFFF" />
-              : <Text style={styles.primaryBtnText}>Update Password</Text>
-            }
-          </TouchableOpacity>
+          />
         </View>
 
-        <TouchableOpacity
-          style={[styles.logoutBtn, isLoggingOut && styles.disabledBtn]}
-          activeOpacity={0.8}
+        <AppButton
+          variant="danger"
+          title="Log Out"
           onPress={() => void handleLogout()}
+          loading={isLoggingOut}
           disabled={isUpdatingProfile || isUpdatingPassword || isLoggingOut}
-        >
-          {isLoggingOut
-            ? <ActivityIndicator size="small" color="#B00020" />
-            : <Text style={styles.logoutBtnText}>Log Out</Text>
-          }
-        </TouchableOpacity>
+        />
 
       </ScrollView>
     </SafeAreaView>

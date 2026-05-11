@@ -3,13 +3,12 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
-  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -126,26 +125,19 @@ export default function LoginScreen({ navigation }: Props) {
           />
           {errors.password ? <Text style={styles.errorText}>{errors.password.message}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, isSubmitting && styles.disabledBtn]}
-            activeOpacity={0.8}
+          <AppButton
+            title="Login"
             onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
             disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? <ActivityIndicator size="small" color="#FFFFFF" />
-              : <Text style={styles.primaryBtnText}>Login</Text>
-            }
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity
-            style={[styles.secondaryBtn, isSubmitting && styles.disabledBtn]}
-            activeOpacity={0.8}
+          <AppButton
+            variant="secondary"
+            title="Go to Signup"
             onPress={() => navigation.navigate('Signup')}
             disabled={isSubmitting}
-          >
-            <Text style={styles.secondaryBtnText}>Go to Signup</Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </SafeAreaView>
