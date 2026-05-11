@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
@@ -12,6 +11,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '../../components/AppButton';
+import EmptyState from '../../components/EmptyState';
+import ErrorState from '../../components/ErrorState';
+import LoadingState from '../../components/LoadingState';
 import QuoteCard from '../../components/QuoteCard';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
@@ -219,19 +221,19 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.sectionHeading}>Recent quotes</Text>
 
         {isLoading ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator size="large" color={colors.text} />
-            <Text style={styles.centerText}>Loading feed...</Text>
-          </View>
+          <LoadingState message="Loading feed..." />
         ) : errorMessage ? (
-          <View style={styles.centerState}>
-            <Text style={styles.errorText}>{errorMessage}</Text>
-            <AppButton title="Try again" variant="secondary" onPress={() => void loadFeed(false)} />
-          </View>
+          <ErrorState
+            title="Could not load feed"
+            message={errorMessage}
+            retryLabel="Try again"
+            onRetry={() => void loadFeed(false)}
+          />
         ) : quotes.length === 0 ? (
-          <View style={styles.centerState}>
-            <Text style={styles.centerText}>No quotes yet from your groups.</Text>
-          </View>
+          <EmptyState
+            title="No quotes yet"
+            message="Quotes from your groups will appear here once people start adding them."
+          />
         ) : (
           <FlatList
             data={quotes}
@@ -314,22 +316,5 @@ const styles = StyleSheet.create({
   listContent: {
     gap: spacing.xs,
     paddingBottom: spacing.lg,
-  },
-  centerState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  centerText: {
-    ...typography.body,
-    color: colors.mutedText,
-    textAlign: 'center',
-  },
-  errorText: {
-    ...typography.body,
-    color: colors.danger,
-    textAlign: 'center',
   },
 });
