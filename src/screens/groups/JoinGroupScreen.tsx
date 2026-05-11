@@ -15,6 +15,7 @@ import { RootStackParamList } from '../../types/navigation';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import CircleIconButton from '../../components/CircleIconButton';
+import { colors, radius, spacing, typography } from '../../theme';
 
 const joinGroupSchema = z.object({
   joinCode: z
@@ -26,8 +27,6 @@ const joinGroupSchema = z.object({
 
 type JoinGroupFormData = z.infer<typeof joinGroupSchema>;
 type Props = NativeStackScreenProps<RootStackParamList, 'JoinGroup'>;
-
-const ACCENT = '#6DBF8A';
 
 function getJoinGroupErrorMessage(error: unknown) {
   const fallbackMessage = 'Unable to join the group right now.';
@@ -114,36 +113,42 @@ export default function JoinGroupScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.topRow}>
-          <CircleIconButton icon="⌂" accessibilityLabel="Back to home" onPress={() => navigation.navigate('Groups')} />
+          <CircleIconButton icon="⌂" accessibilityLabel="Back to groups" onPress={() => navigation.navigate('Groups')} />
         </View>
         <View style={styles.card}>
-          <Text style={styles.title}>Join Group</Text>
-          <Text style={styles.subtitle}>Enter a join code to become a member of an existing group.</Text>
+          <Text style={styles.title}>Join a group</Text>
+          <Text style={styles.subtitle}>Enter a join code to join an existing group and start sharing quotes.</Text>
 
-          <Controller
-            control={control}
-            name="joinCode"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Join Code"
-                placeholderTextColor="#AAAAAA"
-                autoCapitalize="characters"
-                autoCorrect={false}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          {errors.joinCode ? <Text style={styles.errorText}>{errors.joinCode.message}</Text> : null}
+          <View style={styles.fieldBlock}>
+            <Text style={styles.label}>Join code</Text>
 
-          <AppButton
-            title="Join Group"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            disabled={isSubmitting}
-          />
+            <Controller
+              control={control}
+              name="joinCode"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  style={[styles.input, errors.joinCode ? styles.inputError : null]}
+                  placeholder="e.g. QTHAT7"
+                  placeholderTextColor={colors.mutedText}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+            {errors.joinCode ? <Text style={styles.errorText}>{errors.joinCode.message}</Text> : null}
+          </View>
+
+          <View style={styles.actionsBlock}>
+            <AppButton
+              title={isSubmitting ? 'Joining...' : 'Join Group'}
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              disabled={isSubmitting}
+            />
+          </View>
 
         </View>
       </View>
@@ -154,67 +159,80 @@ export default function JoinGroupScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    paddingTop: 8,
-    paddingHorizontal: 20,
+    paddingTop: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
   topRow: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   card: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    gap: spacing.md,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1A1A1A',
+    ...typography.largeTitle,
+    color: colors.text,
+    fontSize: 34,
+    lineHeight: 38,
   },
   subtitle: {
-    color: '#777777',
-    fontSize: 14,
-    marginBottom: 4,
+    ...typography.body,
+    color: colors.mutedText,
+    marginTop: -spacing.xs,
+  },
+  fieldBlock: {
+    gap: spacing.xs,
+  },
+  label: {
+    ...typography.subtitle,
+    color: colors.text,
+    fontWeight: '700',
   },
   input: {
-    backgroundColor: '#F5F6FA',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#1A1A1A',
-    fontSize: 15,
+    ...typography.body,
+    backgroundColor: colors.softAccent,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md - 2,
+    paddingVertical: spacing.sm + 6,
+    color: colors.text,
+    letterSpacing: 0.5,
+  },
+  inputError: {
+    borderColor: '#D65A55',
+    borderWidth: 1.5,
   },
   errorText: {
-    color: '#B00020',
-    fontSize: 13,
-    marginTop: -6,
-    marginBottom: 2,
+    ...typography.caption,
+    color: '#9E2E2A',
+    backgroundColor: '#FDF1F0',
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: '#F5C6C4',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginTop: spacing.xs,
+    alignSelf: 'flex-start',
   },
-  primaryBtn: {
-    backgroundColor: ACCENT,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  disabledBtn: {
-    opacity: 0.5,
+  actionsBlock: {
+    marginTop: spacing.xs,
   },
 });
